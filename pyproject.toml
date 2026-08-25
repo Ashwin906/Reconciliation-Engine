@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "recon-engine"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["requests", "jsonschema", "fastapi", "uvicorn[standard]", "tzdata"]
+
+[project.optional-dependencies]
+dev = ["pytest", "httpx"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "verify"]
+pythonpath = ["."]
+
+[tool.setuptools]
+packages = ["core", "gen", "ingest", "ingest.bank", "match", "verify", "invariant", "evalh", "ledger", "detect", "agent", "gate", "api", "pipeline"]
