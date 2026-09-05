@@ -1,0 +1,635 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<title>Reconciliation Engine</title>
+
+<style>
+  /* Tokens lifted verbatim from the product's own stylesheet
+     (web/src/index.css) so this page and the app are one visual system. */
+  :root {
+    --radius: 0.5rem;
+
+    --background: #F8FAFC;
+    --foreground: #020617;
+    --card: #FFFFFF;
+    --primary: #0369A1;
+    --primary-fg: #FFFFFF;
+    --secondary: #E8ECF1;
+    --muted-fg: #475569;
+    --accent: #E0F2FE;
+    --accent-fg: #075985;
+    --destructive: #DC2626;
+    --success: #15803D;
+    --warning: #B45309;
+    --border: #E2E8F0;
+
+    --shadow-sm: 0 1px 2px rgba(2, 6, 23, .05);
+    --shadow-md: 0 4px 12px -2px rgba(2, 6, 23, .08), 0 2px 4px -2px rgba(2, 6, 23, .04);
+    --shadow-lg: 0 18px 40px -12px rgba(2, 6, 23, .16);
+
+    --font: "Plus Jakarta Sans", system-ui, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --background: #0B1220;
+      --foreground: #F1F5F9;
+      --card: #111A2C;
+      --primary: #38BDF8;
+      --primary-fg: #041322;
+      --secondary: #1B2536;
+      --muted-fg: #94A3B8;
+      --accent: #12283A;
+      --accent-fg: #7DD3FC;
+      --destructive: #F87171;
+      --success: #4ADE80;
+      --warning: #FBBF24;
+      --border: rgba(255, 255, 255, .10);
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
+      --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, .5);
+      --shadow-lg: 0 18px 40px -12px rgba(0, 0, 0, .6);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --background: #0B1220;
+    --foreground: #F1F5F9;
+    --card: #111A2C;
+    --primary: #38BDF8;
+    --primary-fg: #041322;
+    --secondary: #1B2536;
+    --muted-fg: #94A3B8;
+    --accent: #12283A;
+    --accent-fg: #7DD3FC;
+    --destructive: #F87171;
+    --success: #4ADE80;
+    --warning: #FBBF24;
+    --border: rgba(255, 255, 255, .10);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
+    --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, .5);
+    --shadow-lg: 0 18px 40px -12px rgba(0, 0, 0, .6);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+
+  h1, h2, h3, h4 { margin: 0; font-weight: 700; letter-spacing: -0.021em; text-wrap: balance; }
+  h1 { font-size: clamp(2.3rem, 4.6vw, 3.25rem); line-height: 1.08; font-weight: 800; }
+  h2 { font-size: clamp(1.65rem, 3.1vw, 2.3rem); line-height: 1.16; }
+  h3 { font-size: 1.06rem; line-height: 1.4; font-weight: 600; }
+  p  { margin: 0; }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  .eyebrow {
+    font-size: .75rem; font-weight: 600; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--primary);
+  }
+  .sub { color: var(--muted-fg); font-size: 1.075rem; line-height: 1.62; }
+  .col { max-width: 62ch; }
+
+  /* ---------- nav ---------- */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    background: color-mix(in srgb, var(--background) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  nav .inner { display: flex; align-items: center; gap: 28px; height: 60px; }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 700; letter-spacing: -.02em; }
+  .brand .glyph {
+    width: 26px; height: 26px; border-radius: 6px;
+    background: var(--primary); color: var(--primary-fg);
+    display: grid; place-items: center; font-size: .8rem; font-weight: 800;
+    font-family: var(--mono);
+  }
+  nav .links { display: flex; gap: 22px; margin-left: auto; }
+  nav a { color: var(--muted-fg); text-decoration: none; font-size: .9rem; font-weight: 500; }
+  nav a:hover { color: var(--foreground); }
+  @media (max-width: 820px) { nav .links { display: none; } nav .inner { gap: 12px; } }
+
+  /* ---------- buttons ---------- */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 42px; padding: 0 18px; border-radius: var(--radius);
+    font-size: .925rem; font-weight: 600; text-decoration: none;
+    border: 1px solid transparent; cursor: pointer; white-space: nowrap;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  .btn-primary { background: var(--primary); color: var(--primary-fg); }
+  .btn-primary:hover { background: color-mix(in srgb, var(--primary) 88%, black); }
+  .btn-ghost { border-color: var(--border); color: var(--foreground); background: var(--card); }
+  .btn-ghost:hover { background: var(--secondary); }
+  .btn-sm { height: 34px; padding: 0 13px; font-size: .85rem; }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--primary); outline-offset: 2px;
+  }
+
+  /* ---------- layout helpers ---------- */
+  .stack   { display: flex; flex-direction: column; gap: 18px; }
+  .stack-s { display: flex; flex-direction: column; gap: 9px; }
+  section { padding: 92px 0; }
+  section.tight { padding: 64px 0; }
+  .divider { border-top: 1px solid var(--border); }
+
+  /* ---------- hero ---------- */
+  .hero { padding: 80px 0 72px; }
+  .hero-grid {
+    display: grid; grid-template-columns: 1.02fr 1fr; gap: 56px; align-items: center;
+  }
+  @media (max-width: 940px) { .hero-grid { grid-template-columns: 1fr; gap: 44px; } }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .note { font-size: .84rem; color: var(--muted-fg); }
+
+  /* ---------- app mock: mirrors the real dashboard ---------- */
+  .mock {
+    border: 1px solid var(--border); border-radius: 10px;
+    background: var(--card); box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+  .mock-bar {
+    display: flex; align-items: center; gap: 6px;
+    padding: 10px 13px; border-bottom: 1px solid var(--border);
+    background: color-mix(in srgb, var(--secondary) 45%, var(--card));
+  }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border); }
+  .mock-body { display: grid; grid-template-columns: 148px 1fr; min-height: 300px; }
+  .mock-side { border-right: 1px solid var(--border); padding: 14px 10px; display: flex; flex-direction: column; gap: 3px; }
+  /* Declared AFTER .mock-side: an equal-specificity rule later in the
+     sheet wins, so the override has to come second or the sidebar never
+     hides on a phone. */
+  @media (max-width: 560px) {
+    .mock-body { grid-template-columns: 1fr; }
+    .mock-side { display: none; }
+  }
+  .mock-side .t { font-size: .78rem; font-weight: 700; padding: 0 8px 10px; }
+  .mock-nav {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    font-size: .78rem; color: var(--muted-fg);
+    padding: 7px 8px; border-radius: 6px;
+  }
+  .mock-nav.on { background: var(--accent); color: var(--accent-fg); font-weight: 600; }
+  .pill {
+    min-width: 17px; height: 17px; padding: 0 5px; border-radius: 9px;
+    background: var(--warning); color: #fff;
+    font-size: .7rem; font-weight: 700;
+    display: grid; place-items: center;
+  }
+  .mock-main { padding: 18px; display: flex; flex-direction: column; gap: 13px; }
+
+  .banner {
+    border: 1px solid color-mix(in srgb, var(--warning) 34%, transparent);
+    background: color-mix(in srgb, var(--warning) 9%, var(--card));
+    border-radius: var(--radius);
+    padding: 13px 15px; display: flex; gap: 12px; align-items: flex-start;
+  }
+  .banner .ico { color: var(--warning); flex-shrink: 0; margin-top: 1px; }
+  .banner .h { font-weight: 700; color: var(--warning); font-size: .95rem; }
+  .banner .d { font-size: .8rem; color: var(--muted-fg); }
+
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+  .tile {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 11px 12px; background: var(--card);
+  }
+  .tile .v { font-size: 1.32rem; font-weight: 700; line-height: 1.1; }
+  .tile .k { font-size: .7rem; color: var(--muted-fg); margin-top: 2px; }
+
+  .row-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 0; border-top: 1px solid var(--border); font-size: .8rem;
+  }
+  .row-item:first-of-type { border-top: 0; }
+  .badge {
+    font-size: .67rem; font-weight: 600; padding: 2px 7px; border-radius: 999px;
+    background: var(--secondary); color: var(--muted-fg); white-space: nowrap;
+  }
+  .badge.ok   { background: color-mix(in srgb, var(--success) 14%, transparent); color: var(--success); }
+  .badge.warn { background: color-mix(in srgb, var(--warning) 14%, transparent); color: var(--warning); }
+  .badge.bad  { background: color-mix(in srgb, var(--destructive) 14%, transparent); color: var(--destructive); }
+
+  /* ---------- stat strip ---------- */
+  .stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--card); overflow: hidden;
+  }
+  .stats > div { padding: 20px 22px; border-right: 1px solid var(--border); }
+  .stats > div:last-child { border-right: 0; }
+  .stats .v { font-size: 1.7rem; font-weight: 800; line-height: 1.1; letter-spacing: -.02em; }
+  .stats .k { font-size: .78rem; color: var(--muted-fg); margin-top: 3px; }
+  @media (max-width: 700px) { .stats > div { border-right: 0; border-bottom: 1px solid var(--border); } }
+
+  /* ---------- cards ---------- */
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  @media (max-width: 900px) { .grid-3 { grid-template-columns: 1fr; } .grid-2 { grid-template-columns: 1fr; } }
+
+  .card {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--card); padding: 22px;
+    display: flex; flex-direction: column; gap: 9px;
+    box-shadow: var(--shadow-sm);
+  }
+  .card p { font-size: .92rem; color: var(--muted-fg); }
+  .icon {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: var(--accent); color: var(--accent-fg);
+    display: grid; place-items: center; margin-bottom: 3px;
+  }
+
+  /* ---------- steps ---------- */
+  .steps { display: flex; flex-direction: column; }
+  .step {
+    display: grid; grid-template-columns: 84px 1fr; gap: 0 22px;
+    padding: 20px 0; border-top: 1px solid var(--border); align-items: start;
+  }
+  .step .n {
+    font-family: var(--mono); font-size: .78rem; font-weight: 500;
+    color: var(--primary); padding-top: 2px;
+  }
+  .step p { font-size: .92rem; color: var(--muted-fg); margin-top: 4px; }
+  @media (max-width: 620px) { .step { grid-template-columns: 1fr; gap: 4px; } }
+
+  /* ---------- table ---------- */
+  .tablewrap {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--card); overflow-x: auto; box-shadow: var(--shadow-sm);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; min-width: 520px; }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  thead th {
+    font-size: .72rem; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--muted-fg); font-weight: 600; white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+  .good { color: var(--success); font-weight: 600; }
+  .bad  { color: var(--destructive); font-weight: 600; }
+
+  /* ---------- cta band ---------- */
+  .band {
+    border: 1px solid var(--border); border-radius: 12px;
+    background: var(--card); padding: 46px 40px;
+    display: flex; flex-wrap: wrap; gap: 26px; align-items: center; justify-content: space-between;
+    box-shadow: var(--shadow-md);
+  }
+
+  footer { border-top: 1px solid var(--border); padding: 30px 0 46px; }
+  .foot { display: flex; flex-wrap: wrap; gap: 12px 26px; justify-content: space-between; align-items: center; }
+  .foot span { font-size: .84rem; color: var(--muted-fg); }
+
+  .reveal { opacity: 0; transform: translateY(10px); transition: opacity .45s ease, transform .45s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+</style>
+
+<nav>
+  <div class="wrap inner">
+    <span class="brand"><span class="glyph">R</span>Reconciliation</span>
+    <div class="links">
+      <a href="#problem">Problem</a>
+      <a href="#how">How it works</a>
+      <a href="#proof">Proof</a>
+      <a href="#honest">Limits</a>
+    </div>
+    <a class="btn btn-primary btn-sm" href="#start">Open the dashboard</a>
+  </div>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div class="stack">
+      <span class="eyebrow">Razorpay Buildathon &middot; Track 04</span>
+      <h1>Know every rupee<br>actually arrived.</h1>
+      <p class="sub col">
+        Razorpay says it paid you. Your bank says something slightly different. This finds the gap,
+        proves where every rupee went, and tells you plainly when it cannot explain something.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#start">Open the dashboard</a>
+        <a class="btn btn-ghost" href="#how">See how it works</a>
+      </div>
+      <p class="note">Built for merchants without a finance team. No spreadsheet, no accountant required.</p>
+    </div>
+
+    <!-- faithful mock of the real Overview screen -->
+    <div class="mock" role="img" aria-label="The dashboard: a warning that ₹2,463.28 needs checking, with tiles showing 89% matched automatically, 1 item needing attention and 4 items checked and confirmed.">
+      <div class="mock-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+      <div class="mock-body">
+        <aside class="mock-side">
+          <div class="t">Reconciliation</div>
+          <div class="mock-nav on"><span>Overview</span></div>
+          <div class="mock-nav"><span>Watch it happen</span></div>
+          <div class="mock-nav"><span>Needs attention</span><span class="pill">1</span></div>
+          <div class="mock-nav"><span>Activity log</span></div>
+          <div class="mock-nav"><span>Reports</span></div>
+        </aside>
+        <div class="mock-main">
+          <div>
+            <div style="font-size:.95rem;font-weight:700">Good morning.</div>
+            <div style="font-size:.78rem;color:var(--muted-fg)">Here's where your money stands today.</div>
+          </div>
+
+          <div class="banner">
+            <svg class="ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            <div>
+              <div class="h tnum">&#8377;2,463.28 needs checking.</div>
+              <div class="d">Your books balance &mdash; but 1 item couldn't be matched automatically.</div>
+            </div>
+          </div>
+
+          <div class="tiles">
+            <div class="tile"><div class="v tnum">89%</div><div class="k">Matched automatically</div></div>
+            <div class="tile"><div class="v tnum" style="color:var(--warning)">1</div><div class="k">Needs you</div></div>
+            <div class="tile"><div class="v tnum">4</div><div class="k">Confirmed</div></div>
+          </div>
+
+          <div>
+            <div style="font-size:.78rem;font-weight:600;margin-bottom:4px">What needs your attention</div>
+            <div class="row-item">
+              <span style="flex:1">The amount doesn't match what we expected</span>
+              <span class="mono tnum" style="font-weight:600">&#8377;2,463.28</span>
+            </div>
+            <div class="row-item">
+              <span class="mono" style="flex:1;color:var(--muted-fg);font-size:.74rem">setl_2026-02-04</span>
+              <span class="badge warn">Needs review</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= STATS ================= -->
+<section class="tight reveal" style="padding-top:0">
+  <div class="wrap">
+    <div class="stats">
+      <div><div class="v tnum">&#8377;0.00</div><div class="k">Proven unaccounted for</div></div>
+      <div><div class="v tnum">476</div><div class="k">Tests passing</div></div>
+      <div><div class="v tnum">4</div><div class="k">Matching tiers</div></div>
+      <div><div class="v tnum">0</div><div class="k">Corrections applied unchecked</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PROBLEM ================= -->
+<section id="problem" class="divider reveal">
+  <div class="wrap stack">
+    <div class="stack-s">
+      <span class="eyebrow">The problem</span>
+      <h2>Three records. None of them wrong. All of them different.</h2>
+      <p class="sub col">
+        Every settlement cycle leaves a small gap nobody has time to chase. Individually invisible,
+        annually expensive.
+      </p>
+    </div>
+
+    <div class="grid-3" style="margin-top:14px">
+      <div class="card">
+        <div class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        </div>
+        <h3>Money quietly pulled back</h3>
+        <p>A customer disputes a payment weeks later. The amount, plus a fee, disappears from a
+          settlement with nothing telling you which one.</p>
+      </div>
+      <div class="card">
+        <div class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>
+        </div>
+        <h3>Fees above your rate card</h3>
+        <p>Half a basis point over contract, across a thousand transactions. Your settlement and your
+          bank agree perfectly &mdash; and both are wrong.</p>
+      </div>
+      <div class="card">
+        <div class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        </div>
+        <h3>Money held, not lost</h3>
+        <p>A rolling reserve is withheld this month and returned two months later. Looked at one month
+          at a time, it looks like a loss and then a windfall.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HOW ================= -->
+<section id="how" class="divider reveal">
+  <div class="wrap stack">
+    <div class="stack-s">
+      <span class="eyebrow">How it works</span>
+      <h2>It tries four ways to explain a gap<br>before it ever asks you</h2>
+      <p class="sub col">
+        Each step only looks at what the step before it could not resolve. Anything left over is
+        called unexplained, never guessed at.
+      </p>
+    </div>
+
+    <div class="steps" style="margin-top:14px">
+      <div class="step">
+        <span class="n">Step 1</span>
+        <div>
+          <h3>Match on the reference number</h3>
+          <p>The settlement's UTR against the bank's reference, amounts tying exactly.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="n">Step 2</span>
+        <div>
+          <h3>Check the settlement's own arithmetic</h3>
+          <p>Payments, minus refunds, minus disputes &mdash; does the settlement add up on its own terms,
+            regardless of what the bank says?</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="n">Step 3</span>
+        <div>
+          <h3>Allow for banks renaming things</h3>
+          <p>A rewritten reference or a truncated description is noise, not a loss. Amounts are never
+            matched approximately &mdash; money either ties or it is a real gap.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="n">Step 4</span>
+        <div>
+          <h3>Investigate what is left, with AI</h3>
+          <p>Only the leftovers reach a model, and only to suggest a cause. Its suggestion is
+            re-checked from your raw records before anyone acts on it.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="n">Then</span>
+        <div>
+          <h3>Prove the books balance, and record the decision</h3>
+          <p>Every rupee collected is matched against every door it could have left through. The
+            result is written to a permanent log that is added to, never edited.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PROOF ================= -->
+<section id="proof" class="divider reveal">
+  <div class="wrap stack">
+    <div class="stack-s">
+      <span class="eyebrow">Why you can trust it</span>
+      <h2>The AI is never allowed to decide</h2>
+      <p class="sub col">
+        You can make the AI actively dishonest inside the app and watch what stops it. Four different
+        attacks, four different defences, nothing reaching your books.
+      </p>
+    </div>
+
+    <div class="tablewrap" style="margin-top:14px">
+      <table>
+        <thead>
+          <tr>
+            <th>What the AI tries</th>
+            <th class="r">Applied to your books</th>
+            <th>What stopped it</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Invents evidence that does not exist</td>
+            <td class="r good">None</td>
+            <td>Checked against your real records first</td>
+          </tr>
+          <tr>
+            <td>Understates an amount to slip under the approval limit</td>
+            <td class="r good">None</td>
+            <td>The amount is recalculated, never taken on trust</td>
+          </tr>
+          <tr>
+            <td>Blames something real but unrelated</td>
+            <td class="r good">None</td>
+            <td>The arithmetic simply fails to add up</td>
+          </tr>
+          <tr>
+            <td>Claims total confidence with nothing behind it</td>
+            <td class="r good">None</td>
+            <td>Evidence is checked before confidence is read</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--primary);margin-top:6px">
+      <h3>The one worth seeing</h3>
+      <p>The AI cites a genuine dispute and claims the correction is worth
+        <span class="mono bad">&#8377;0.01</span> when it is really worth
+        <span class="mono">&#8377;2,463.28</span> &mdash; small enough to be approved automatically with
+        nobody watching. It fails, because the part of the system that decides works the number out
+        itself instead of asking the AI.</p>
+    </div>
+
+    <div class="grid-2" style="margin-top:22px">
+      <div class="card">
+        <h3>Compared against doing it the simple way</h3>
+        <p>The same data also runs through plain reference matching &mdash; what most reconciliation
+          scripts actually are. On a renamed bank reference it reports money missing that had
+          arrived. On overcharged fees it reports everything fine while
+          <span class="bad">&#8377;259.69</span> walks out the door.</p>
+      </div>
+      <div class="card">
+        <h3>Every number traceable to a run you started</h3>
+        <p>The app ships with no data in it. No sample figures, no seeded merchant. You pick a
+          scenario, watch it execute, and every screen fills with that run's real results.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HONEST ================= -->
+<section id="honest" class="divider reveal">
+  <div class="wrap stack">
+    <div class="stack-s">
+      <span class="eyebrow">What it does not do</span>
+      <h2>The limits, before you find them</h2>
+      <p class="sub col">
+        A reconciliation tool that oversells itself is the exact thing this was built against.
+      </p>
+    </div>
+
+    <div class="grid-2" style="margin-top:14px">
+      <div class="card">
+        <h3>The live Razorpay connection is untested</h3>
+        <p>The API client, the data mapping and the whole pipeline are built and tested against
+          recorded responses. The one piece that makes the actual network call has never run against
+          a real account, because no keys were available. The app says so on screen rather than
+          letting you discover it.</p>
+      </div>
+      <div class="card">
+        <h3>Bank statements are read, not uploaded</h3>
+        <p>A statement is picked up from a file rather than dragged into the browser. Storage is
+          in-memory rather than a database, and there is one merchant rather than real multi-tenancy.</p>
+      </div>
+    </div>
+
+    <p class="note" style="margin-top:18px">
+      Each of these is a known boundary with a known shape &mdash; written down, not discovered later.
+    </p>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section id="start" class="divider reveal">
+  <div class="wrap">
+    <div class="band">
+      <div class="stack-s" style="max-width:52ch">
+        <h2 style="font-size:1.6rem">Start with a problem, not a spreadsheet</h2>
+        <p class="sub" style="font-size:.98rem">
+          Pick something that goes wrong for real merchants, watch the money travel from the customer
+          to your bank, and see exactly where it breaks.
+        </p>
+      </div>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="./dashboard.html">Open the dashboard</a>
+        <a class="btn btn-ghost" href="./pitch-script.html">Pitch Walkthrough</a>
+        <a class="btn btn-ghost" href="./intro-video.html">Demo Video</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <span class="brand" style="font-size:.95rem"><span class="glyph" style="width:22px;height:22px;font-size:.7rem">R</span>Reconciliation Engine</span>
+    <span>Razorpay Buildathon &middot; Track 04 &middot; AI Finance Controller</span>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window) ||
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      els.forEach(function (e) { e.classList.add('in'); });
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, { rootMargin: '0px 0px -6% 0px', threshold: .05 });
+    els.forEach(function (e) { io.observe(e); });
+  })();
+</script>

@@ -1,0 +1,437 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+
+<title>Five Minute Pitch</title>
+
+<style>
+  /* Same tokens as the product and its landing page (web/src/index.css),
+     so this reads as part of the same body of work. */
+  :root {
+    --bg: #F8FAFC;
+    --ink: #020617;
+    --card: #FFFFFF;
+    --primary: #0369A1;
+    --primary-fg: #FFFFFF;
+    --muted: #475569;
+    --accent: #E0F2FE;
+    --accent-fg: #075985;
+    --success: #15803D;
+    --warning: #B45309;
+    --danger: #DC2626;
+    --border: #E2E8F0;
+    --rail: #CBD5E1;
+
+    --font: "Plus Jakarta Sans", system-ui, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0B1220;
+      --ink: #F1F5F9;
+      --card: #111A2C;
+      --primary: #38BDF8;
+      --primary-fg: #041322;
+      --muted: #94A3B8;
+      --accent: #12283A;
+      --accent-fg: #7DD3FC;
+      --success: #4ADE80;
+      --warning: #FBBF24;
+      --danger: #F87171;
+      --border: rgba(255,255,255,.10);
+      --rail: #334155;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0B1220;
+    --ink: #F1F5F9;
+    --card: #111A2C;
+    --primary: #38BDF8;
+    --primary-fg: #041322;
+    --muted: #94A3B8;
+    --accent: #12283A;
+    --accent-fg: #7DD3FC;
+    --success: #4ADE80;
+    --warning: #FBBF24;
+    --danger: #F87171;
+    --border: rgba(255,255,255,.10);
+    --rail: #334155;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 940px; margin: 0 auto; padding: 40px 22px 80px; }
+
+  h1, h2, h3 { margin: 0; letter-spacing: -.022em; text-wrap: balance; font-weight: 700; }
+  h1 { font-size: clamp(1.9rem, 4.4vw, 2.6rem); line-height: 1.1; font-weight: 800; }
+  h2 { font-size: 1.15rem; line-height: 1.3; }
+  p { margin: 0; }
+
+  .kicker {
+    font-family: var(--mono);
+    font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--primary); font-weight: 600;
+  }
+  .lede { color: var(--muted); font-size: 1.02rem; max-width: 62ch; }
+
+  header.top { display: flex; flex-direction: column; gap: 12px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 4px; }
+  .chip {
+    font-family: var(--mono); font-size: .7rem; letter-spacing: .04em;
+    border: 1px solid var(--border); background: var(--card);
+    padding: 4px 9px; border-radius: 999px; color: var(--muted);
+  }
+
+  /* ---- beats ---- */
+  .beats { display: flex; flex-direction: column; gap: 0; margin-top: 40px; }
+
+  .beat {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 0 26px;
+    padding: 30px 0;
+    border-top: 1px solid var(--border);
+  }
+  .beat:first-child { border-top: 2px solid var(--rail); }
+
+  .tc { position: relative; }
+  .tc .time {
+    font-family: var(--mono); font-size: .82rem; font-weight: 600;
+    color: var(--ink); font-variant-numeric: tabular-nums;
+  }
+  .tc .dur {
+    font-family: var(--mono); font-size: .68rem; color: var(--muted);
+    display: block; margin-top: 2px;
+  }
+
+  .body { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+  .crit {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: var(--mono); font-size: .68rem; letter-spacing: .07em;
+    text-transform: uppercase; font-weight: 600;
+    color: var(--accent-fg); background: var(--accent);
+    padding: 4px 9px; border-radius: 4px; align-self: flex-start;
+  }
+
+  /* stage directions: quiet, technical, unmistakably not the words you say */
+  .screen {
+    font-family: var(--mono); font-size: .78rem; line-height: 1.7;
+    color: var(--muted);
+    border-left: 2px solid var(--rail);
+    padding: 2px 0 2px 13px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .screen b { color: var(--ink); font-weight: 600; }
+
+  /* the words: set large enough to read off a second monitor */
+  .say {
+    font-size: 1.14rem; line-height: 1.72; max-width: 60ch;
+    display: flex; flex-direction: column; gap: 13px;
+  }
+  .say em { font-style: normal; background: var(--accent); color: var(--accent-fg); padding: 0 3px; }
+  .say strong { font-weight: 700; }
+  .beatnum { font-variant-numeric: tabular-nums; }
+
+  .pause {
+    font-family: var(--mono); font-size: .72rem; color: var(--warning);
+    letter-spacing: .04em;
+  }
+
+  /* ---- reference tables ---- */
+  section.ref { margin-top: 54px; display: flex; flex-direction: column; gap: 14px; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--card); }
+  table { width: 100%; border-collapse: collapse; font-size: .875rem; min-width: 460px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  thead th {
+    font-family: var(--mono); font-size: .68rem; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--muted); font-weight: 600; white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  ol.check { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 7px; font-size: .93rem; }
+  ol.check code, p code, td code {
+    font-family: var(--mono); font-size: .84em;
+    background: var(--accent); color: var(--accent-fg); padding: .06em .34em; border-radius: 3px;
+  }
+
+  .warn {
+    border: 1px solid color-mix(in srgb, var(--warning) 38%, transparent);
+    background: color-mix(in srgb, var(--warning) 9%, var(--card));
+    border-radius: 8px; padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 7px; font-size: .9rem;
+  }
+  .warn b { color: var(--warning); }
+
+  footer { margin-top: 54px; padding-top: 18px; border-top: 1px solid var(--border);
+           font-family: var(--mono); font-size: .72rem; color: var(--muted); }
+
+  @media (max-width: 640px) {
+    .beat { grid-template-columns: 1fr; gap: 10px; }
+    .tc { display: flex; align-items: baseline; gap: 10px; }
+    .tc .dur { margin-top: 0; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="top">
+    <span class="kicker">Razorpay Buildathon &middot; Track 04</span>
+    <h1>Five minutes, four criteria,<br>one claim per beat.</h1>
+    <p class="lede">
+      A recorded five-minute video. Every figure below is read from a real run and verified &mdash; say them
+      exactly as written, because they will be on screen at the same time, and a judge who spots a
+      mismatch stops believing the rest.
+    </p>
+    <div class="chips">
+      <span class="chip">Problem taste</span>
+      <span class="chip">Build quality</span>
+      <span class="chip">AI judgment</span>
+      <span class="chip">Failure recovery</span>
+      <span class="chip">~560 spoken words</span>
+    </div>
+  </header>
+
+  <div class="beats">
+
+    <!-- ============ 1 ============ -->
+    <article class="beat">
+      <div class="tc"><span class="time">0:00</span><span class="dur">45 sec</span></div>
+      <div class="body">
+        <span class="crit">Problem taste</span>
+        <div class="screen">
+          <span><b>Open on</b> landing.html hero, full screen.</span>
+          <span><b>Do not</b> scroll. Let the mock dashboard sit there while you talk.</span>
+        </div>
+        <div class="say">
+          <p>
+            Three records. Razorpay's dashboard, the bank statement, and the merchant's own books.
+            Each one internally consistent. None of them agree.
+          </p>
+          <p>
+            A chargeback pulled back without notice. A settlement that never landed. A fee half a
+            basis point over contract, across a thousand transactions. Individually invisible.
+            Annually, it is real money.
+          </p>
+          <p>
+            And most Razorpay merchants &mdash; kirana stores, solo sellers, freelancers &mdash; have
+            nobody whose job it is to look. <strong>We built the thing that looks.</strong>
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <!-- ============ 2 ============ -->
+    <article class="beat">
+      <div class="tc"><span class="time">0:45</span><span class="dur">70 sec</span></div>
+      <div class="body">
+        <span class="crit">Build quality</span>
+        <div class="screen">
+          <span><b>Cut to</b> the app. It opens on <b>Watch it happen</b> with an empty results panel.</span>
+          <span><b>Click</b> &ldquo;The bank rewrote the reference number&rdquo; &mdash; let the stages play.</span>
+          <span><b>Then click</b> the <b>vs. simple matching</b> tab.</span>
+          <span><b>Finally</b> switch the rail to <b>Build your own</b> and drag a slider. Three seconds, no run needed.</span>
+        </div>
+        <div class="say">
+          <p>
+            This ships with no data in it. No seeded merchant, no sample numbers. You pick a problem
+            and watch it execute.
+          </p>
+          <p>
+            The bank renamed a reference number. Exact matching fails outright &mdash; and the fallback
+            tiers recover it. <em class="beatnum">100% reconciled</em>, books balance to zero.
+          </p>
+          <p>
+            Now the same data through plain reference matching, which is what most reconciliation
+            scripts actually are. <em class="beatnum">Eighty percent.</em> It reports money missing that
+            actually arrived &mdash; and that is the expensive kind of wrong. It sends someone hunting
+            for a payment that is already in the bank.
+          </p>
+          <p>
+            Four hundred and seventy-six tests. Money is integer paise, never a float. And the layer
+            that narrates this computes nothing &mdash; it reads the pipeline's output, so the demo
+            cannot drift from what the system actually does.
+          </p>
+          <p>
+            And these are not scenarios I hand-picked to pass. <strong>You can compose your own</strong>
+            &mdash; pick the faults, set how severe. The controls are generated from the injectors'
+            real function signatures, so the app cannot offer you a dial that quietly does nothing.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <!-- ============ 3 ============ -->
+    <article class="beat">
+      <div class="tc"><span class="time">1:55</span><span class="dur">65 sec</span></div>
+      <div class="body">
+        <span class="crit">AI judgment</span>
+        <div class="screen">
+          <span><b>Click</b> &ldquo;You were overcharged fees&rdquo;. Land on the verdict.</span>
+          <span><b>Point at</b> the warning line: books balanced, money still gone.</span>
+          <span><b>Then switch</b> the left rail to <b>Attack it</b>. Do not run one yet.</span>
+        </div>
+        <div class="say">
+          <p>Where does AI belong in this? Almost nowhere.</p>
+          <p>
+            Four deterministic tiers run before a model is ever consulted. Take this one: it
+            reconciles at <em class="beatnum">100%</em>. Settlement and bank agree exactly. And
+            <em class="beatnum">&#8377;259.69</em> still walked out the door &mdash; because the
+            overcharge happened <strong>before</strong> the settlement was calculated. Both numbers
+            are internally consistent and both are wrong.
+          </p>
+          <p>
+            Rule-based detection catches that. No model involved. Arithmetic does not need one.
+          </p>
+          <p>
+            The model is used for exactly one thing: proposing a cause for what is left over. It
+            never decides. And you don't have to take my word for that &mdash; you can make it lie.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <!-- ============ 4 ============ -->
+    <article class="beat">
+      <div class="tc"><span class="time">3:00</span><span class="dur">75 sec</span></div>
+      <div class="body">
+        <span class="crit">Failure recovery</span>
+        <div class="screen">
+          <span><b>Click</b> &ldquo;Understate the amount&rdquo;. Wait for the green panel.</span>
+          <span><b>Point at</b> the claimed vs actual rows, then the badge row.</span>
+          <span><b>Optional cut</b> to FAILURES.md, failure #1.</span>
+        </div>
+        <div class="say">
+          <p>
+            Here is the attack that matters. The model cites a <strong>real</strong> dispute and
+            claims the correction is worth <em class="beatnum">one paisa</em> &mdash; when it is
+            actually <em class="beatnum">&#8377;2,463.28</em>. Small enough to slip under the
+            auto-approve limit and be written to the books with nobody watching. It states
+            <em class="beatnum">99% confidence</em>.
+          </p>
+          <p>
+            <strong>Zero applied automatically.</strong> The gate recomputes the amount from raw data.
+            It never reads the model's number.
+          </p>
+          <p>
+            I know that attack works because <strong>we shipped that bug</strong>. The gate used to
+            trust the model's claimed amount. That is failure number one in a log of thirteen, each
+            written down with what broke and how it was caught.
+          </p>
+          <p>
+            My favourite is number thirteen. Our own reserve demo produced a table where every
+            individual number was correct &mdash; supporting a conclusion that was false. That is far
+            harder to catch than a wrong number, and it nearly shipped as the headline proof.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <!-- ============ 5 ============ -->
+    <article class="beat">
+      <div class="tc"><span class="time">4:15</span><span class="dur">45 sec</span></div>
+      <div class="body">
+        <span class="crit">Build quality &middot; honesty</span>
+        <div class="screen">
+          <span><b>Cut to</b> landing.html &rarr; &ldquo;The limits, before you find them&rdquo;.</span>
+          <span><b>End on</b> the hero, or on the Activity log showing real rows.</span>
+        </div>
+        <div class="say">
+          <p>
+            What does not work. The client that actually calls Razorpay's API has never run against
+            live keys &mdash; we had none. Everything either side of it is tested against recorded
+            payloads, and the app says so <strong>on screen</strong> rather than letting you find out.
+            Storage is in memory, not Postgres. One merchant, not real multi-tenancy.
+          </p>
+          <p>
+            Those are boundaries we wrote down, not discoveries waiting for you.
+          </p>
+          <p>
+            The claim is not that this system is never wrong. It is that
+            <strong>when it is wrong, it says so</strong> &mdash; and nothing it cannot prove is ever
+            allowed to touch someone's books.
+          </p>
+          <p class="pause">Hold two seconds on the screen after the last word, then cut. No thank-you card, no outro music.</p>
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+  <!-- ============ NUMBERS ============ -->
+  <section class="ref">
+    <h2>Numbers to get exactly right</h2>
+    <p class="lede">All verified against a live run. If the screen and your voice disagree, the judge believes neither.</p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Where</th><th>Say</th><th>Because</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Renamed reference</td><td class="n">80% &rarr; 100%</td><td>Naive vs this system, same data</td></tr>
+          <tr><td>Fee overcharge</td><td class="n">&#8377;259.69</td><td>Invisible to matching; both records agree</td></tr>
+          <tr><td>The attack</td><td class="n">&#8377;0.01 vs &#8377;2,463.28</td><td>Claimed against actual</td></tr>
+          <tr><td>The attack</td><td class="n">99%</td><td>Its stated confidence &mdash; not 97%</td></tr>
+          <tr><td>The attack</td><td class="n">0 auto-applied</td><td>Not &ldquo;0 ledger rows&rdquo; &mdash; see warning below</td></tr>
+          <tr><td>Test suite</td><td class="n">476</td><td>Whole suite including the independence guard</td></tr>
+          <tr><td>Failure log</td><td class="n">13</td><td>Numbered failures in FAILURES.md</td></tr>
+          <tr><td>Conservation</td><td class="n">&#8377;0.00</td><td>Residual on a clean run</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="warn">
+      <p><b>Do not say &ldquo;zero modifications to the ledger.&rdquo;</b></p>
+      <p>
+        An adversarial run <strong>does</strong> write ledger rows &mdash; <code>gate=HUMAN</code>,
+        <code>status=PENDING_APPROVAL</code> &mdash; on purpose. If a judge opens the Activity log
+        after your demo and sees rows, an overstated claim costs you the whole segment. The true and
+        stronger line is <strong>&ldquo;zero corrections applied automatically.&rdquo;</strong>
+      </p>
+    </div>
+
+    <div class="warn">
+      <p><b>Do not merge the four attacks into one defence.</b></p>
+      <p>
+        Fabricated evidence is stopped <em>before</em> the gate. The understated amount
+        <em>reaches</em> the gate and is caught by independent recomputation. Saying one defence
+        catches everything is both wrong and a weaker story than
+        <strong>&ldquo;four attacks, four different defences.&rdquo;</strong>
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ SETUP ============ -->
+  <section class="ref">
+    <h2>How to actually record this</h2>
+    <p class="lede">
+      It is a recorded video, so nothing has to be performed in one take. Use that.
+    </p>
+    <ol class="check">
+      <li><strong>Record the screen and the voice separately.</strong> Capture clean screen footage of each beat first, with no talking, then read the script over it. You stop fighting to click and speak in rhythm at the same time, and a fluffed line costs one retake of audio instead of the whole run.</li>
+      <li><strong>Record the five beats as five clips.</strong> Any mistake costs you one beat, never the whole video. Cut them together in order.</li>
+      <li>Before capturing: start both servers, then click <strong>Clear all</strong> so the app is genuinely empty. The empty state is part of the argument &mdash; it proves nothing is seeded.</li>
+      <li>Confirm the app opens on <strong>Watch it happen</strong>, not Overview.</li>
+      <li>Each scenario animation runs about four seconds. Capture it once, then trim it to fit the narration rather than padding your speech to match it.</li>
+      <li>Browser at 100% zoom. Pick light or dark and stay there. Hide bookmarks, close other tabs, silence notifications.</li>
+      <li>Record at 1080p minimum &mdash; the rupee figures are the whole point and they must be legible after compression.</li>
+      <li>Do not add background music under the numbers. Let &#8377;0.01 against &#8377;2,463.28 land in silence.</li>
+    </ol>
+  </section>
+
+  <footer>Reconciliation Engine &middot; pitch script &middot; every figure verified against a live run</footer>
+</div>
