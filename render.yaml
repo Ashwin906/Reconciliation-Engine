@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: reconciliation-engine
+    env: docker
+    plan: free
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
