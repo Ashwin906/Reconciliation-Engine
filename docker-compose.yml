@@ -1,0 +1,32 @@
+# [UNVERIFIED end-to-end] -- Docker Desktop was not running on this
+# machine while this repo was built (checked repeatedly: `docker ps`
+# fails to reach the daemon). Every service below is built from
+# Dockerfiles that follow standard, unremarkable patterns, and the
+# application code itself is proven by 340+ passing tests -- what
+# remains unverified is specifically the containerized run. First thing
+# to check once Docker is available: `docker compose up` from this
+# directory, then open http://localhost:5173.
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # GROQ_API_KEY intentionally not set here -- see .env.example.
+      # Without it, T4 investigation is skipped (DECISIONS.md D-08: an
+      # unreachable/unconfigured LLM degrades to honest residue, never
+      # to an unsafe fallback) and the Ledger screen shows a genuinely,
+      # not artificially, empty feed.
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+
+  frontend:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend

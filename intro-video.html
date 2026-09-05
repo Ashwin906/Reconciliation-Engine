@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reconciliation Engine — animated introduction</title>
+<style>
+:root{--ink:#020617;--paper:#f8fafc;--blue:#0369a1;--sky:#e0f2fe;--line:#dbe5ef;--muted:#64748b;--green:#15803d;--green-bg:#f0fdf4;--amber:#b45309;--amber-bg:#fffbeb;--red:#dc2626;--mono:Consolas,monospace;--sans:Inter,"Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;height:100vh;overflow:hidden;background:#071120;font-family:var(--sans);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.stage{position:relative;width:min(100vw,calc((100vh - 80px)*16/9));height:min(calc(100vh - 80px),56.25vw);max-width:100vw;max-height:calc(100vh - 80px);margin:0;overflow:hidden;aspect-ratio:16/9;background:radial-gradient(circle at 84% 8%,#d8f1ff 0,transparent 25%),radial-gradient(circle at 7% 95%,#dcfce7 0,transparent 22%),var(--paper);isolation:isolate}
+.stage:before{content:"";position:absolute;inset:0;z-index:-1;opacity:.4;background-image:linear-gradient(#cbd5e166 1px,transparent 1px),linear-gradient(90deg,#cbd5e166 1px,transparent 1px);background-size:4.16% 7.4%;mask-image:linear-gradient(#000,transparent 88%)}
+.top{position:absolute;z-index:20;top:4.2%;right:5.2%;left:5.2%;display:flex;justify-content:space-between;align-items:center}
+.brand{display:flex;gap:.72vw;align-items:center;font-size:1.1vw;font-weight:800;letter-spacing:-.04em}
+.mark{display:grid;place-items:center;width:2.55vw;height:2.55vw;border-radius:.55vw;background:var(--blue);color:white;font:800 1.03vw var(--mono);box-shadow:0 .45vw 1.3vw #0369a133}
+.brand b,.eyebrow{color:var(--blue)}
+.scene{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .55s}
+.scene.active{opacity:1}
+.inner{position:absolute;inset:16% 9% 17%;display:grid;grid-template-columns:1.03fr .97fr;align-items:center;gap:5.4vw}
+.eyebrow{font-size:.78vw;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+h1{max-width:47vw;margin:.8vw 0 0;font-size:clamp(24px,3.25vw,62px);line-height:1.04;letter-spacing:-.06em}
+h1 em{color:var(--blue);font-style:normal}
+.copy{max-width:42vw;margin:1.2vw 0 0;color:var(--muted);font-size:1.15vw;line-height:1.58}
+.card{border:1px solid var(--line);border-radius:.65vw;background:white;box-shadow:0 1vw 2.5vw #02061713}
+.active .in{animation:up .55s both}
+.active .d1{animation-delay:.22s}
+.active .d2{animation-delay:.44s}
+@keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* controls bar outside the video frame */
+.controls-bar{width:min(100vw,calc((100vh - 80px)*16/9));height:80px;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0}
+.caption{flex:1;max-width:80%;padding:10px 16px;border:1px solid #ffffff1c;border-radius:8px;color:white;background:#020617e8;box-shadow:0 6px 20px #02061729;text-align:center;font-size:16px;font-weight:650;line-height:1.42;opacity:0;transform:translateY(8px);transition:.25s}
+.caption.show{opacity:1;transform:translateY(0)}
+.replay{position:absolute;right:0;display:grid;place-items:center;width:40px;height:40px;padding:0;border:0;border-radius:50%;color:white;background:var(--ink);cursor:pointer;transition:.18s;flex-shrink:0}
+.replay:hover{background:var(--blue);transform:scale(1.08)}
+.replay svg{width:16px}
+
+/* scene visuals */
+.shop{position:relative;width:28vw;height:20vw;margin:auto}
+.roof{position:absolute;top:0;left:2%;width:96%;height:21%;border-radius:.65vw .65vw 0 0;background:var(--ink);transform:skewX(-7deg)}
+.front{position:absolute;right:7%;bottom:0;left:7%;height:80%;border:.22vw solid var(--ink);background:#fff;box-shadow:.7vw .8vw #cbd5e1}
+.awning{position:absolute;top:0;right:-2%;left:-2%;display:flex;height:21%;overflow:hidden;border-bottom:.16vw solid var(--ink)}
+.awning i{flex:1;background:var(--blue);transform:skewX(-9deg)}
+.awning i:nth-child(even){background:#bae6fd}
+.door{position:absolute;bottom:0;left:12%;width:26%;height:55%;border:.16vw solid var(--ink);background:#dbeafe}
+.window{position:absolute;right:10%;bottom:20%;width:34%;height:34%;border:.16vw solid var(--ink);background:#e0f2fe}
+.sale{position:absolute;z-index:2;padding:.5vw .68vw;border:1px solid #bbf7d0;border-radius:.45vw;color:var(--green);background:var(--green-bg);box-shadow:0 .4vw 1vw #15803d14;font:.76vw var(--mono);font-weight:800;opacity:0}
+.sale:before{content:"✓ ";font-family:var(--sans)}
+.sale.a{top:-5%;right:-6%}.sale.b{top:33%;right:-18%}.sale.c{right:-5%;bottom:-3%}
+.active .sale{animation:tag .45s both}
+.active .sale.b{animation-delay:.45s}
+.active .sale.c{animation-delay:.9s}
+@keyframes tag{to{opacity:1;transform:translateY(-10px)}}
+
+.aggregate{position:relative;width:31vw;height:21vw;margin:auto}
+.coin{position:absolute;display:grid;place-items:center;width:3.8vw;height:3.8vw;border:.18vw solid var(--amber);border-radius:50%;color:var(--amber);background:#fef3c7;box-shadow:inset 0 0 0 .25vw #fde68a;font:800 1.2vw var(--mono);opacity:0}
+.coin:nth-child(1){top:0;left:8%}.coin:nth-child(2){top:8%;left:40%}.coin:nth-child(3){top:2%;right:7%}.coin:nth-child(4){bottom:8%;left:15%}.coin:nth-child(5){right:26%;bottom:0}
+.active .coin{animation:merge 2.8s cubic-bezier(.4,0,.2,1) both}
+.active .coin:nth-child(2){animation-delay:.12s}.active .coin:nth-child(3){animation-delay:.24s}.active .coin:nth-child(4){animation-delay:.36s}.active .coin:nth-child(5){animation-delay:.48s}
+@keyframes merge{0%{opacity:0;transform:translateY(17px)scale(.75)}17%{opacity:1;transform:none}75%{opacity:1;transform:translate(9vw,7vw)}100%{opacity:0;transform:translate(9vw,7vw)scale(.08)}}
+.hub{position:absolute;top:48%;left:50%;display:grid;place-items:center;width:14vw;height:7.4vw;border-radius:.85vw;color:white;background:var(--blue);box-shadow:0 1vw 2.4vw #0369a145;transform:translate(-50%,-50%) scale(.7);opacity:0;text-align:center}
+.hub b{font-size:1.05vw}.hub small{margin-top:.25vw;opacity:.75;font-size:.65vw}
+.active .hub{animation:hub .5s 2.5s both}
+@keyframes hub{to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.payout{position:absolute;bottom:-3%;left:50%;padding:.68vw 1vw;border:.18vw solid var(--ink);border-radius:.4vw;background:white;box-shadow:.55vw .6vw #cbd5e1;transform:translateX(-50%) translateY(15px);opacity:0;font-size:.82vw;font-weight:800}
+.payout small{display:block;margin-top:.15vw;color:var(--muted);font:.58vw var(--mono)}
+.active .payout{animation:up .45s 3s both}
+
+.statement{width:31vw;margin:auto;padding:1.65vw;transform:rotate(3deg)}
+.statement-head{padding-bottom:.9vw;border-bottom:1px solid var(--line);color:var(--muted);font:800 .6vw var(--mono);letter-spacing:.1em}
+.bankline{display:grid;grid-template-columns:1fr auto;gap:.5vw;margin-top:2vw;padding:.9vw 0;border-bottom:1px solid var(--line);font:700 .71vw var(--mono)}
+.bankline b{color:var(--green);font-size:1.15vw}.bankline small{grid-column:1/-1;color:var(--muted);font-size:.57vw}
+.unknown{display:grid;place-items:center;width:4.8vw;height:4.8vw;margin:1.35vw auto 0;border-radius:50%;color:var(--amber);background:#fef3c7;font-size:2.8vw;font-weight:800;opacity:0;transform:scale(.5)}
+.active .unknown{animation:pop .45s .75s both}
+@keyframes pop{70%{transform:scale(1.13)}100%{opacity:1;transform:scale(1)}}
+
+.grid-cards{display:grid;grid-template-columns:1fr 1fr;gap:.75vw;width:34vw;margin:auto}
+.deduct{padding:1vw;opacity:0;transform:translateY(13px)}
+.deduct strong{display:block;font-size:.82vw}.deduct span{display:block;margin-top:.28vw;color:var(--muted);font-size:.66vw}.deduct b{display:block;margin-top:.72vw;color:var(--red);font:800 .96vw var(--mono)}
+.active .deduct{animation:up .4s both}
+.active .deduct:nth-child(2){animation-delay:.2s}.active .deduct:nth-child(3){animation-delay:.4s}.active .deduct:nth-child(4){animation-delay:.6s}
+.gap{grid-column:1/-1;display:flex;justify-content:space-between;padding:1.05vw;border:1px solid #fde68a;border-radius:.55vw;background:var(--amber-bg);opacity:0}
+.gap span{font-size:.76vw;font-weight:800}.gap b{color:var(--amber);font:800 1.05vw var(--mono)}
+.active .gap{animation:up .45s 1.05s both}
+
+.sources{display:grid;grid-template-columns:1fr 1fr;gap:.8vw;width:32vw;margin:auto}
+.source{display:flex;align-items:center;gap:.8vw;padding:1vw;opacity:0;transform:translateX(14px)}
+.source i{display:grid;place-items:center;width:2.1vw;height:2.1vw;border-radius:.45vw;color:var(--blue);background:var(--sky);font:800 .75vw var(--mono);font-style:normal}
+.source b{display:block;font-size:.76vw}.source small{display:block;margin-top:.1vw;color:var(--muted);font-size:.61vw}
+.active .source{animation:right .4s both}
+.active .source:nth-child(2){animation-delay:.18s}.active .source:nth-child(3){animation-delay:.36s}.active .source:nth-child(4){animation-delay:.54s}
+@keyframes right{to{opacity:1;transform:none}}
+.rebuild{margin:1vw auto 0;padding:.65vw .85vw;width:max-content;border:1px solid #bbf7d0;border-radius:.45vw;color:var(--green);background:var(--green-bg);font-size:.72vw;font-weight:800;opacity:0}
+.active .rebuild{animation:up .4s .95s both}
+
+.proof{width:34vw;margin:auto;padding:1.35vw}
+.proof-head{display:flex;justify-content:space-between;padding-bottom:.8vw;border-bottom:1px solid var(--line);font-size:.67vw;font-weight:800}
+.proof-head i{padding:.2vw .4vw;border-radius:.25vw;color:var(--amber);background:var(--amber-bg);font:.55vw var(--mono);font-style:normal}
+.line{display:grid;grid-template-columns:1fr auto;gap:.7vw;padding:.61vw 0;border-bottom:1px solid #f1f5f9;font-size:.68vw;opacity:0}
+.line b{font:800 .72vw var(--mono)}.line.minus b{color:var(--red)}
+.line.total{margin-top:.35vw;padding:.68vw;border:0;border-radius:.35vw;color:var(--green);background:var(--green-bg);font-weight:800}
+.active .line{animation:up .32s both}
+.active .line:nth-child(2){animation-delay:.3s}.active .line:nth-child(3){animation-delay:.6s}.active .line:nth-child(4){animation-delay:.9s}.active .line:nth-child(5){animation-delay:1.2s}
+
+.guard{position:relative;width:34vw;height:21vw;margin:auto}
+.ai,.verify{position:absolute;width:14.5vw;padding:1vw;opacity:0}
+.ai{top:0;left:0;border:1px solid #fecaca;border-radius:.55vw;color:#991b1b;background:#fff7f7}
+.verify{top:4%;right:0;border:1px solid #bbf7d0;border-radius:.55vw;color:var(--green);background:var(--green-bg)}
+.ai b,.verify b{font-size:.75vw}.ai p,.verify p{margin:.45vw 0 0;font-size:.61vw;line-height:1.45}.ai strong,.verify strong{display:block;margin-top:.6vw;font:800 .76vw var(--mono)}
+.shield{position:absolute;top:12%;left:50%;display:grid;place-items:center;width:7vw;height:8vw;clip-path:polygon(50% 0,91% 16%,85% 71%,50% 100%,15% 71%,9% 16%);color:white;background:var(--blue);transform:translateX(-50%) scale(.5);opacity:0;font-size:2.1vw;font-weight:800}
+.held{position:absolute;bottom:0;left:50%;padding:.65vw .85vw;border:1px solid #bbf7d0;border-radius:.45vw;color:var(--green);background:white;font-size:.7vw;font-weight:800;transform:translateX(-50%) translateY(12px);opacity:0}
+.active .ai{animation:up .4s both}
+.active .shield{animation:shield .5s .45s both}
+@keyframes shield{70%{transform:translateX(-50%) scale(1.1)}100%{opacity:1;transform:translateX(-50%) scale(1)}}
+.active .verify{animation:up .4s .9s both}
+.active .held{animation:up .4s 1.35s both}
+
+.result{position:absolute;inset:18% 12% 18%;display:grid;place-items:center;text-align:center}
+.result h1{max-width:58vw;font-size:clamp(28px,4.1vw,76px)}
+.conserve{display:flex;align-items:center;gap:.55vw;margin-top:2.2vw;padding:.95vw 1.2vw;border:1px solid #bbf7d0;border-radius:.6vw;color:var(--green);background:white;box-shadow:0 1vw 2.5vw #15803d13;font:800 1.14vw var(--mono);opacity:0;transform:translateY(15px)}
+.conserve i{display:grid;place-items:center;width:1.5vw;height:1.5vw;border-radius:50%;color:white;background:var(--green);font-style:normal;font-size:.9vw}
+.result p{margin:1.65vw 0 0;color:var(--muted);font-size:1.05vw;opacity:0}
+.next{margin:2.2vw auto 0;padding:.68vw .9vw;width:max-content;border-radius:.45vw;color:white;background:var(--ink);font-size:.75vw;font-weight:800;opacity:0}
+.active .conserve,.active .result p,.active .next{animation:up .45s both}
+.active .conserve{animation-delay:.55s}.active .result p{animation-delay:1.15s}.active .next{animation-delay:1.7s}
+
+/* overlay — fixed over entire viewport */
+.overlay{position:fixed;z-index:999;inset:0;display:grid;place-items:center;background:rgba(2,6,23,0.85);backdrop-filter:blur(6px);transition:opacity .35s}
+.overlay.hidden{opacity:0;pointer-events:none}
+.panel{width:min(480px,88vw);padding:2.4vw 2.8vw;border:1px solid rgba(255,255,255,.15);border-radius:1vw;color:white;background:#0f172af5;box-shadow:0 2vw 5vw rgba(0,0,0,.5);text-align:center}
+.panel .mark{width:3vw;height:3vw;min-width:36px;min-height:36px;font-size:1.1vw;margin:0 auto 1.2vw}
+.panel h2{margin:0 0 .8vw;font-size:clamp(20px,2.2vw,40px);letter-spacing:-.04em}
+.panel p{margin:0 0 1.6vw;color:#94a3b8;font-size:clamp(13px,1vw,18px);line-height:1.6}
+.btn-play{padding:.8vw 1.6vw;border:0;border-radius:.5vw;color:white;background:var(--blue);cursor:pointer;font-size:clamp(13px,.95vw,18px);font-weight:700;letter-spacing:.02em;transition:.18s}
+.btn-play:hover{background:#0284c7;transform:translateY(-1px)}
+
+@media(max-width:700px){.caption{font-size:2.5vw}.copy{font-size:1.8vw}.sources,.proof,.grid-cards,.guard,.statement{width:37vw}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+
+<main class="stage">
+  <div class="top"><div class="brand"><span class="mark">R</span><span>Reconciliation <b>Engine</b></span></div></div>
+
+  <section class="scene" id="s1"><div class="inner"><div><div class="eyebrow in">The merchant's normal day</div><h1 class="in d1">600 sales.<br><em>One busy day.</em></h1><p class="copy in d2">Every order is visible in the merchant's store. So far, the money feels simple.</p></div><div class="shop"><div class="roof"></div><div class="front"><div class="awning"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="door"></div><div class="window"></div></div><div class="sale a">&#x2713; &#x20B9;1,250 paid</div><div class="sale b">&#x2713; &#x20B9;899 paid</div><div class="sale c">&#x2713; &#x20B9;2,499 paid</div></div></div></section>
+
+  <section class="scene" id="s2"><div class="inner"><div><div class="eyebrow in">What happens next</div><h1 class="in d1">Hundreds of payments<br>become <em>one payout.</em></h1><p class="copy in d2">Razorpay collects sales, applies fees, refunds, and disputes&#x2014;then batches the result for the merchant&#x2019;s bank.</p></div><div class="aggregate"><i class="coin">&#x20B9;</i><i class="coin">&#x20B9;</i><i class="coin">&#x20B9;</i><i class="coin">&#x20B9;</i><i class="coin">&#x20B9;</i><div class="hub"><b>Payment aggregator</b><small>collects &middot; nets &middot; settles</small></div><div class="payout">One settlement<small>600 sales inside</small></div></div></div></section>
+
+  <section class="scene" id="s3"><div class="inner"><div><div class="eyebrow in">Two days later</div><h1 class="in d1">The bank shows<br><em>just one line.</em></h1><p class="copy in d2">There is no itemised list. No easy way to tell if the amount is exactly right.</p></div><div><div class="statement card in d1"><div class="statement-head">MERCHANT BANK &middot; STATEMENT</div><div class="bankline"><span>NEFT CR RAZORPAY</span><b>&#x20B9;95,679.28</b><small>REF SBIN0425008812 &middot; 09:42:17</small></div></div><div class="unknown">?</div></div></div></section>
+
+  <section class="scene" id="s4"><div class="inner"><div><div class="eyebrow in">The real question</div><h1 class="in d1">Was this amount<br><em>actually correct?</em></h1><p class="copy in d2">It could be a real loss&#x2014;or a fee, refund, chargeback, or reserve hold that is perfectly legitimate.</p></div><div class="grid-cards"><div class="deduct card"><strong>Payment fees</strong><span>Contracted per method</span><b>&#x2212; &#x20B9;1,204.00</b></div><div class="deduct card"><strong>GST on fees</strong><span>Tax on the fee</span><b>&#x2212; &#x20B9;216.72</b></div><div class="deduct card"><strong>Old refunds</strong><span>From earlier orders</span><b>&#x2212; &#x20B9;3,100.00</b></div><div class="deduct card"><strong>Chargeback</strong><span>Customer dispute + fee</span><b>&#x2212; &#x20B9;2,500.00</b></div><div class="gap"><span>Which deductions are real?</span><b>Merchant cannot tell</b></div></div></div></section>
+
+  <section class="scene" id="s5"><div class="inner"><div><div class="eyebrow in">The solution</div><h1 class="in d1">Rebuild the journey<br>from <em>four records.</em></h1><p class="copy in d2">The engine connects the merchant&#x2019;s sales, Razorpay payments and settlements, and the actual bank credit.</p></div><div><div class="sources"><div class="source card"><i>01</i><div><b>Orders</b><small>What the merchant sold</small></div></div><div class="source card"><i>02</i><div><b>Payments</b><small>What Razorpay collected</small></div></div><div class="source card"><i>03</i><div><b>Settlements</b><small>What Razorpay paid out</small></div></div><div class="source card"><i>04</i><div><b>Bank lines</b><small>What actually arrived</small></div></div></div><div class="rebuild">&#x2713; One connected, checkable record</div></div></div></section>
+
+  <section class="scene" id="s6"><div class="inner"><div><div class="eyebrow in">Tier 1 &middot; exact transfer reference</div><h1 class="in d1">T1 finds the<br><em>bank UTR.</em></h1><p class="copy in d2">First, match Razorpay&#x2019;s settlement UTR to the bank reference. Both the identifier and amount must be identical.</p></div><div class="proof card"><div class="proof-head"><span>T1 &middot; UTR MATCH</span><i>EXACT</i></div><div class="line"><span>Settlement UTR</span><b>SBIN0425008812</b></div><div class="line"><span>Bank reference</span><b>SBIN0425008812</b></div><div class="line total"><span>Amount ties exactly</span><b>&#x20B9;95,679.28 &#x2713;</b></div></div></div></section>
+
+  <section class="scene" id="s7"><div class="inner"><div><div class="eyebrow in">Tier 2 &middot; settlement reconstruction</div><h1 class="in d1">T2 rebuilds the<br><em>payout arithmetic.</em></h1><p class="copy in d2">When one bank credit represents many payments, the engine re-derives the payout from its component transactions and deductions.</p></div><div class="proof card"><div class="proof-head"><span>T2 &middot; SETTLEMENT PROOF</span><i>CHECKABLE</i></div><div class="line"><span>Captured payments</span><b>&#x20B9;100,200.00</b></div><div class="line minus"><span>Fees + GST</span><b>&#x2212; &#x20B9;1,420.72</b></div><div class="line minus"><span>Refunds</span><b>&#x2212; &#x20B9;3,100.00</b></div><div class="line total"><span>Bank credit</span><b>&#x20B9;95,679.28 &#x2713;</b></div></div></div></section>
+
+  <section class="scene" id="s8"><div class="inner"><div><div class="eyebrow in">Tier 3 &middot; identity-only noise</div><h1 class="in d1">T3 handles a changed<br><em>reference&#x2014;not money.</em></h1><p class="copy in d2">Banks can truncate narration or a failed transfer can receive a new UTR. T3 scores identity clues, but never calls a different amount close enough.</p></div><div><div class="sources"><div class="source card"><i>UTR</i><div><b>Reference changed</b><small>Old and new identifiers linked</small></div></div><div class="source card"><i>TXT</i><div><b>Narration similar</b><small>Bank description is truncated</small></div></div><div class="source card"><i>&#x20B9;</i><div><b>Amount is exact</b><small>Any material gap remains open</small></div></div><div class="source card"><i>&#x2713;</i><div><b>High-confidence identity</b><small>Evidence is attached to the match</small></div></div></div><div class="rebuild">T3 resolves identity noise, never financial variance</div></div></div></section>
+
+  <section class="scene" id="s9"><div class="inner"><div><div class="eyebrow in">Tier 4 &middot; unresolved residue</div><h1 class="in d1">T4 asks AI to<br><em>suggest, not decide.</em></h1><p class="copy in d2">Only the remaining unexplained cases reach AI. Its evidence, arithmetic, and correction size are independently recomputed before the deterministic gate acts.</p></div><div class="guard"><div class="ai"><b>AI proposes</b><p>This dispute explains the gap.</p><strong>claims: &#x20B9;0.01</strong></div><div class="shield">&#x2713;</div><div class="verify"><b>Verifier recomputes</b><p>Evidence exists, but the real adjustment is larger.</p><strong>actual: &#x20B9;2,463.28</strong></div><div class="held">&#x2713; Held for human review</div></div></div></section>
+
+  <section class="scene" id="s10"><div class="result"><div class="eyebrow">The promise</div><h1>Not a matcher.<br><em>A proof engine.</em></h1><div class="conserve"><i>&#x2713;</i> &#x20B9;0.00 unaccounted for</div><p>Every rupee is traced. Every decision is verified. Every unknown stays honestly unknown.</p><div class="next">&#x2192; Next: watch the live dashboard run</div></div></section>
+</main>
+
+<div class="controls-bar">
+  <div class="caption" id="caption"></div>
+  <button class="replay" id="replay-btn" aria-label="Replay introduction"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
+</div>
+
+<!-- overlay: last in DOM, position:fixed covers everything -->
+<div class="overlay" id="overlay-panel">
+  <div class="panel">
+    <div class="mark">R</div>
+    <h2>A 110-second solution story</h2>
+    <p>Play, switch to full-screen, and record. Every reconciliation tier has its own slide.</p>
+    <button class="btn-play" id="btn-play">Play introduction</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  var DURATION = 110000;
+  var scenes = Array.from(document.querySelectorAll('.scene'));
+  var capEl  = document.getElementById('caption');
+  var overlayEl = document.getElementById('overlay-panel');
+
+  var beats = [
+    ['s1',  0,     'A merchant sells hundreds of products over the course of a normal, busy day. Every order is visible in their store, and the money feels simple.'],
+    ['s2',  10500, 'Behind the scenes, Razorpay collects those sales, applies fees, refunds, and disputes, then batches hundreds of payments into one single settlement payout.'],
+    ['s3',  21500, 'Two days later, the bank statement shows just one line item. There is no itemised list, and no easy way to tell if the final deposited amount is exactly right.'],
+    ['s4',  31500, 'When the amount does not match expectations, it raises a real question: was this a legitimate deduction like a fee or chargeback, or a real loss? Without data, the merchant simply cannot tell.'],
+    ['s5',  42000, 'The Reconciliation Engine solves this by automatically rebuilding the journey. It connects the orders, Razorpay payments, settlements, and the actual bank credit into one checkable record.'],
+    ['s6',  53000, 'Tier 1 looks for an exact transfer reference. It matches the Razorpay settlement UTR directly to the bank reference, ensuring both the identifier and the exact amount tie perfectly.'],
+    ['s7',  64500, 'When one bank credit represents many payments, Tier 2 mathematically reconstructs the payout. It re-derives the final credit from all component transactions, fees, GST, and refunds.'],
+    ['s8',  77000, 'Banks can sometimes truncate narration or alter a transfer reference. Tier 3 resolves this identity noise using contextual clues, but maintains strict financial integrity by never accepting a different amount.'],
+    ['s9',  89500, 'Only the most complex, unresolved edge cases reach Tier 4. Here, AI acts as an investigator to propose a solution, while a deterministic verifier independently recomputes the math before any action is taken.'],
+    ['s10', 101500,'The ultimate promise is not just a high match rate, but a rigorous proof engine. Every single rupee is traced, every decision is verified, and any genuine unknowns stay honestly unknown.']
+  ];
+
+  var startTime = 0;
+  var frameId = 0;
+  var lastScene = '';
+
+  function showScene(id) {
+    scenes.forEach(function(s) {
+      s.classList.toggle('active', s.id === id);
+    });
+  }
+
+  function updateCaption(text) {
+    capEl.classList.remove('show');
+    setTimeout(function() {
+      capEl.textContent = text;
+      capEl.classList.add('show');
+    }, 120);
+  }
+
+  function tick(now) {
+    var elapsed = Math.min(now - startTime, DURATION);
+
+    // find the current beat (last one whose timestamp <= elapsed)
+    var current = null;
+    for (var i = 0; i < beats.length; i++) {
+      if (elapsed >= beats[i][1]) current = beats[i];
+    }
+
+    if (current && current[0] !== lastScene) {
+      showScene(current[0]);
+      updateCaption(current[2]);
+      lastScene = current[0];
+    }
+
+    if (elapsed < DURATION) {
+      frameId = requestAnimationFrame(tick);
+    } else {
+      updateCaption('Now continue into the live dashboard and watch the real pipeline run.');
+    }
+  }
+
+  function play() {
+    cancelAnimationFrame(frameId);
+    lastScene = '';
+    overlayEl.classList.add('hidden');
+    startTime = performance.now();
+    frameId = requestAnimationFrame(tick);
+  }
+
+  document.getElementById('btn-play').addEventListener('click', play);
+  document.getElementById('replay-btn').addEventListener('click', play);
+})();
+</script>
+</body>
+</html>

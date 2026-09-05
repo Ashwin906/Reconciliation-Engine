@@ -1,0 +1,74 @@
+# ── Secrets ──────────────────────────────────────────────────────────────────
+.env
+*.env.*
+!.env.example          # keep the example template
+
+# ── Extra markdown docs (keep only README.md) ────────────────────────────────
+BUILD_PLAN.md
+DECISIONS.md
+DOMAIN_KNOWLEDGE.md
+EVALUATION.md
+FAILURES.md
+FUNCTION_REFERENCE.md
+PROBLEM_AND_SOLUTION.md
+UI_GENERATION_PROMPT.md
+
+# ── Python artifacts ─────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+pytest.ini
+tox.ini
+
+# ── Eval / run outputs ────────────────────────────────────────────────────────
+eval_results/
+graphify-out/
+
+# ── Node / frontend ───────────────────────────────────────────────────────────
+web/node_modules/
+web/dist/
+web/.vite/
+web/*.local
+web/coverage/
+
+# ── OS & editor cruft ─────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+.idea/
+.vscode/settings.json
+
+# ── Agent / IDE tooling (not for public consumption) ─────────────────────────
+.agents/
+.claude/
+skills-lock.json
+
+# ── Design-system scratch files ───────────────────────────────────────────────
+design-system/
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+*.log
+*.tmp
+*.bak
