@@ -6,7 +6,7 @@ import { ExceptionsPage } from "@/components/ExceptionsPage";
 import { LedgerPage } from "@/components/LedgerPage";
 import { ExportPage } from "@/components/ExportPage";
 import { EmptyState } from "@/components/EmptyState";
-import { client } from "@/lib/api";
+import { API_ORIGIN, client } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 // Order is the user's actual journey, not an alphabet: you run something
@@ -115,10 +115,22 @@ function App() {
         </header>
 
         {error && (
-          <div className="p-6 text-destructive text-sm space-y-1">
-            <p>Could not reach the backend at localhost:8000 — {error}</p>
+          <div className="m-6 max-w-2xl rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm space-y-2">
+            <p className="font-semibold text-destructive">Can&rsquo;t reach the reconciliation API</p>
+            <p className="text-muted-foreground font-mono text-xs break-words">{error}</p>
             <p className="text-muted-foreground">
-              Start it with <code className="font-mono">uvicorn api.main:app --reload</code>, then reload this page.
+              {API_ORIGIN ? (
+                <>
+                  This dashboard is pointed at <code className="font-mono">{API_ORIGIN}</code>. A free-tier
+                  host can take ~30s to wake from sleep — reload to retry.
+                </>
+              ) : (
+                <>
+                  This build has no API URL configured. Start the backend with{" "}
+                  <code className="font-mono">uvicorn api.main:app --reload</code>, or rebuild with{" "}
+                  <code className="font-mono">VITE_API_BASE</code> set to the deployed backend, then reload.
+                </>
+              )}
             </p>
           </div>
         )}

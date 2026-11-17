@@ -33,6 +33,11 @@ jobs:
           cache-dependency-path: web/package-lock.json
 
       - name: Build Web
+        env:
+          # Backend origin for the static bundle. Set it once with:
+          #   gh variable set VITE_API_BASE --body "https://<backend-host>"
+          # Re-running this workflow then rebuilds the dashboard against it.
+          VITE_API_BASE: ${{ vars.VITE_API_BASE }}
         run: |
           cd web
           npm ci

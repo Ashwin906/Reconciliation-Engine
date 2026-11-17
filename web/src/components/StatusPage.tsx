@@ -40,11 +40,9 @@ export function StatusPage({ runId }: { runId: string }) {
 
   if (error) {
     return (
-      <div className="p-8 text-destructive text-sm space-y-1">
-        <p>Could not reach the backend API — {error}</p>
-        <p className="text-muted-foreground">
-          Start it with <code className="font-mono">uvicorn api.main:app --reload</code>, then reload this page.
-        </p>
+      <div className="p-8 text-sm space-y-1">
+        <p className="font-semibold text-destructive">Can&rsquo;t load this run</p>
+        <p className="text-muted-foreground font-mono text-xs break-words">{error}</p>
       </div>
     );
   }

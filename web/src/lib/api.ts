@@ -2,7 +2,48 @@
 // calls against a real running server -- no mock data. Backend runs on
 // :8000 in dev (see .claude/launch.json), this dashboard on :5173.
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? (import.meta.env.DEV ? "http://localhost:8000" : "");
+// Where the dashboard looks for the API. In dev this defaults to the local
+// uvicorn process; a built bundle uses VITE_API_BASE so the same artifact can
+// run same-origin (single container, empty base) or against a separately
+// deployed backend (GitHub Pages -> cloud API).
+export const API_ORIGIN = (
+  import.meta.env.VITE_API_BASE ?? (import.meta.env.DEV ? "http://localhost:8000" : "")
+).replace(/\/+$/, "");
+
+const API_BASE = API_ORIGIN;
+
+/** A failed API call, carrying the status code so the UI can tell "the
+ *  backend is asleep / unreachable" apart from "the backend said no". */
+export class ApiError extends Error {
+  readonly status: number | null;
+  readonly path: string;
+
+  constructor(message: string, path: string, status: number | null = null) {
+    super(message);
+    this.name = "ApiError";
+    this.path = path;
+    this.status = status;
+  }
+}
+
+/** Error bodies are not always JSON: a proxy, a wrong host, or GitHub Pages
+ *  answering for a missing route all return a full HTML document. Never put
+ *  that document on screen -- reduce it to one readable line. */
+function readableBody(body: string): string {
+  const looksLikeHtml = /^\s*<(!doctype|html|head|body)/i.test(body);
+  const text = (looksLikeHtml
+    ? body
+        .replace(/<script[\s\S]*?<\/script>/gi, " ")
+        .replace(/<style[\s\S]*?<\/style>/gi, " ")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&[a-z]+;/gi, " ")
+    : body
+  )
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return "";
+  return text.length > 160 ? `${text.slice(0, 160)}…` : text;
+}
 
 export interface Finding {
   rule: string;
@@ -279,10 +320,25 @@ export interface SimJourney {
 }
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, init);
+  const method = init?.method ?? "GET";
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, init);
+  } catch {
+    throw new ApiError(
+      API_BASE
+        ? `No response from ${API_BASE} (${method} ${path}). The service may be starting up, asleep, or this origin may be blocked by CORS.`
+        : `No API URL in this build, so ${method} ${path} had nowhere to go. Rebuild with VITE_API_BASE set to the backend URL.`,
+      path
+    );
+  }
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`${init?.method ?? "GET"} ${path} -> ${res.status}: ${body}`);
+    const detail = readableBody(await res.text().catch(() => ""));
+    throw new ApiError(
+      `${method} ${path} -> ${res.status}${detail ? `: ${detail}` : ""}`,
+      path,
+      res.status
+    );
   }
   return res.json() as Promise<T>;
 }
