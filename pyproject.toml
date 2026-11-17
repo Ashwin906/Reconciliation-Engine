@@ -16,4 +16,4 @@ testpaths = ["tests", "verify"]
 pythonpath = ["."]
 
 [tool.setuptools]
-packages = ["core", "gen", "ingest", "ingest.bank", "match", "verify", "invariant", "evalh", "ledger", "detect", "agent", "gate", "api", "pipeline"]
+packages = ["core", "gen", "ingest", "ingest.bank", "match", "verify", "invariant", "evalh", "ledger", "detect", "agent", "gate", "api", "pipeline", "reserve", "sim"]
